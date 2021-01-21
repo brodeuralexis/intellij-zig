@@ -1,0 +1,28 @@
+<idea-plugin>
+    <id>org.ziglang.intellij-zig</id>
+    <name>IntelliJ Zig</name>
+    <vendor email="brodeuralexis@gmail.com" url="https://brodeuralexis.github.io/intellij-zig">Alexis Brodeur</vendor>
+
+    <description><![CDATA[
+    Adds support for the Zig programming language through syntax highlighting.
+    ]]></description>
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType name="Zig"
+                  language="Zig"
+                  implementationClass="org.ziglang.ZigFileType"
+                  fieldName="INSTANCE"/>
+        <lang.parserDefinition language="Zig"
+                               implementationClass="org.ziglang.ZigParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="Zig"
+                                       implementationClass="org.ziglang.ZigSyntaxHighlighterFactory"/>
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+    </actions>
+</idea-plugin>

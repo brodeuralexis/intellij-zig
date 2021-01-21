@@ -1,0 +1,439 @@
+{
+  parserClass="org.ziglang.ZigParser"
+
+  extends="com.intellij.extapi.psi.ASTWrapperPsiElement"
+
+  psiClassPrefix="Zig"
+  psiImplClassSuffix="Impl"
+  psiPackage="org.ziglang.psi"
+  psiImplPackage="org.ziglang.psi.impl"
+
+  elementTypeHolderClass="org.ziglang.psi.ZigTypes"
+  elementTypeClass="org.ziglang.psi.ZigElementType"
+  tokenTypeClass="org.ziglang.psi.ZigTokenType"
+
+  tokens=[
+    DOCCOMMENT='doc comment'
+    LINECOMMENT='comment'
+
+    AMPERSAND='&'
+    AMPERSANDEQUAL='&='
+    ASTERISK='*'
+    ASTERISK2='**'
+    ASTERISKEQUAL='*='
+    ASTERISKPERCENT='*%'
+    ASTERISKPERCENTEQUAL='*&='
+    AT='@'
+    CARET='^'
+    CARETEQUAL='^='
+    COLON=':'
+    COMMA=','
+    DOT='.'
+    DOT2='..'
+    DOT3='...'
+    DOTASTERISK='.*'
+    DOTQUESTIONMARK='.?'
+    EQUAL='='
+    EQUALEQUAL='=='
+    EQUALRARROW='=>'
+    EXCLAMATIONMARK='!'
+    EXCLAMATIONMARKEQUAL='!='
+    LARROW='<'
+    LARROW2='<<'
+    LARROW2EQUAL='<<='
+    LARROWEQUAL='<='
+    LBRACE='{'
+    LBRACKET='['
+    LPAREN='('
+    MINUS='-'
+    MINUSEQUAL='-='
+    MINUSPERCENT='-%'
+    MINUSPERCENTEQUAL='-%='
+    MINUSRARROW='->'
+    PERCENT='%'
+    PERCENTEQUAL='%='
+    PIPE='|'
+    PIPE2='||'
+    PIPEEQUAL='|='
+    PLUS='+'
+    PLUS2='++'
+    PLUSEQUAL='+='
+    PLUSPERCENT='+%'
+    PLUSPERCENTEQUAL='+%='
+    LETTERC='c'
+    QUESTIONMARK='?'
+    RARROW='>'
+    RARROW2='>>'
+    RARROW2EQUAL='>>='
+    RARROWEQUAL='>='
+    RBRACE='}'
+    RBRACKET=']'
+    RPAREN=')'
+    SEMICOLON=';'
+    SLASH='/'
+    SLASHEQUAL='/='
+    TILDE='~'
+
+    KEYWORD_ALIGN='align'
+    KEYWORD_ALLOWZERO='allowzero'
+    KEYWORD_AND='and'
+    KEYWORD_ANYFRAME='anyframe'
+    KEYWORD_ANYTYPE='anytype'
+    KEYWORD_ASM='asm'
+    KEYWORD_ASYNC='async'
+    KEYWORD_AWAIT='await'
+    KEYWORD_BREAK='break'
+    KEYWORD_CALLCONV='callconv'
+    KEYWORD_CATCH='catch'
+    KEYWORD_COMPTIME='comptime'
+    KEYWORD_CONST='const'
+    KEYWORD_CONTINUE='continue'
+    KEYWORD_DEFER='defer'
+    KEYWORD_ELSE='else'
+    KEYWORD_ENUM='enum'
+    KEYWORD_ERRDEFER='errdefer'
+    KEYWORD_ERROR='error'
+    KEYWORD_EXPORT='export'
+    KEYWORD_EXTERN='extern'
+    KEYWORD_FALSE='false'
+    KEYWORD_FN='fn'
+    KEYWORD_FOR='for'
+    KEYWORD_IF='if'
+    KEYWORD_INLINE='inline'
+    KEYWORD_noalias='noalias'
+    KEYWORD_NOSUSPEND='nosuspend'
+    KEYWORD_NOINLINE='noinline'
+    KEYWORD_NULL='null'
+    KEYWORD_OPAQUE='opaque'
+    KEYWORD_ORELSE='orelse'
+    KEYWORD_OR='or'
+    KEYWORD_PACKED='packed'
+    KEYWORD_PUB='pub'
+    KEYWORD_RESUME='resume'
+    KEYWORD_RETURN='return'
+    KEYWORD_LINKSECTION='linksection'
+    KEYWORD_STRUCT='struct'
+    KEYWORD_SUSPEND='suspend'
+    KEYWORD_SWITCH='switch'
+    KEYWORD_TEST='test'
+    KEYWORD_THREADLOCAL='threadlocal'
+    KEYWORD_TRUE='true'
+    KEYWORD_TRY='try'
+    KEYWORD_UNDEFINED='undefined'
+    KEYWORD_UNION='union'
+    KEYWORD_UNREACHABLE='unreachable'
+    KEYWORD_USINGNAMESPACE='usingnamespace'
+    KEYWORD_VAR='var'
+    KEYWORD_VOLATILE='volatile'
+    KEYWORD_WHILE='while'
+
+    IDENTIFIERLITERAL='identifier'
+    STRINGLITERALSINGLE="string literal"
+    STRINGLITERALLINE='multi-line string literal'
+    CHARLITERAL="character literal"
+    INTEGERLITERAL='integer literal'
+    FLOATLITERAL='float literal'
+  ]
+}
+
+Root ::= ContainerMembers?
+
+Comment ::= LINECOMMENT | DOCCOMMENT
+
+Identifier ::= IDENTIFIERLITERAL
+             | AT STRINGLITERALSINGLE
+
+StringLiteral ::= STRINGLITERALSINGLE
+                | STRINGLITERALLINE
+
+ContainerMembers ::= Comment ContainerMembers
+                   | TestDecl ContainerMembers
+                   | TopLevelComptime ContainerMembers
+                   | KEYWORD_PUB? TopLevelDecl ContainerMembers
+                   | ContainerField COMMA ContainerMembers
+                   | ContainerField?
+
+TestDecl ::= KEYWORD_TEST STRINGLITERALSINGLE Block
+
+TopLevelComptime ::= KEYWORD_COMPTIME BlockExpr
+
+TopLevelDecl ::= (KEYWORD_EXPORT | KEYWORD_EXTERN STRINGLITERALSINGLE? | (KEYWORD_INLINE | KEYWORD_NOINLINE))? FnProto (SEMICOLON | Block)
+               | (KEYWORD_EXPORT | KEYWORD_EXTERN STRINGLITERALSINGLE?)? KEYWORD_THREADLOCAL? VarDecl
+               | KEYWORD_USINGNAMESPACE Expr SEMICOLON
+
+FnProto ::= KEYWORD_FN Identifier? LPAREN ParamDeclList RPAREN ByteAlign? LinkSection? CallConv? EXCLAMATIONMARK? (KEYWORD_ANYTYPE | TypeExpr)
+
+VarDecl ::= (KEYWORD_CONST | KEYWORD_VAR) Identifier (COLON TypeExpr)? ByteAlign? LinkSection? (EQUAL Expr)? SEMICOLON
+
+ContainerField ::= KEYWORD_COMPTIME? Identifier (COLON TypeExpr ByteAlign?)? (EQUAL Expr)?
+
+Statement ::= Comment Statement
+            | KEYWORD_COMPTIME? VarDecl
+            | KEYWORD_COMPTIME BlockExprStatement
+            | KEYWORD_NOSUSPEND BlockExprStatement
+            | KEYWORD_SUSPEND (SEMICOLON | BlockExprStatement)
+            | KEYWORD_DEFER BlockExprStatement
+            | KEYWORD_ERRDEFER BlockExprStatement
+            | IfStatement
+            | LabeledStatement
+            | SwitchExpr
+            | AssignExpr SEMICOLON
+
+IfStatement ::= IfPrefix BlockExpr (KEYWORD_ELSE Payload? Statement)?
+              | IfPrefix AssignExpr (SEMICOLON | KEYWORD_ELSE Payload? Statement)
+
+LabeledStatement ::= BlockLabel? (Block | LoopStatement)
+
+LoopStatement ::= KEYWORD_INLINE? (ForStatement | WhileStatement)
+
+ForStatement ::= ForPrefix BlockExpr (KEYWORD_ELSE Statement)?
+               | ForPrefix AssignExpr (SEMICOLON | KEYWORD_ELSE Statement)
+
+WhileStatement ::= WhilePrefix BlockExpr (KEYWORD_ELSE Payload? Statement)?
+                 | WhilePrefix AssignExpr (SEMICOLON | KEYWORD_ELSE Payload? Statement)
+
+BlockExprStatement ::= BlockExpr
+                     | AssignExpr SEMICOLON
+
+BlockExpr ::= BlockLabel? Block
+
+AssignExpr ::= Expr (AssignOp Expr)?
+
+Expr ::= BoolOrExpr
+
+BoolOrExpr ::= BoolAndExpr (KEYWORD_OR BoolAndExpr)*
+
+BoolAndExpr ::= CompareExpr (KEYWORD_AND CompareExpr)*
+
+CompareExpr ::= BitwiseExpr (CompareOp BitwiseExpr)?
+
+BitwiseExpr ::= BitShiftExpr (BitwiseOp BitShiftExpr)*
+
+BitShiftExpr ::= AdditionExpr (BitShiftOp AdditionExpr)*
+
+AdditionExpr ::= MultiplyExpr (AdditionOp MultiplyExpr)*
+
+MultiplyExpr ::= PrefixExpr (MultiplyOp PrefixExpr)*
+
+PrefixExpr ::= PrefixOp* PrimaryExpr
+
+PrimaryExpr ::= AsmExpr
+              | IfExpr
+              | KEYWORD_BREAK BreakLabel? Expr?
+              | KEYWORD_COMPTIME Expr
+              | KEYWORD_NOSUSPEND Expr
+              | KEYWORD_CONTINUE BreakLabel?
+              | KEYWORD_RESUME Expr
+              | KEYWORD_RETURN Expr?
+              | BlockLabel? LoopExpr
+              | Block
+              | CurlySuffixExpr
+
+IfExpr ::= IfPrefix Expr (KEYWORD_ELSE Payload? Expr)?
+
+Block ::= LBRACE Statement* RBRACE
+
+LoopExpr ::= KEYWORD_INLINE? (ForExpr | WhileExpr)
+
+ForExpr ::= ForPrefix Expr (KEYWORD_ELSE Expr)?
+
+WhileExpr ::= WhilePrefix Expr (KEYWORD_ELSE Payload? Expr)?
+
+CurlySuffixExpr ::= TypeExpr InitList?
+
+InitList ::= LBRACE FieldInit (COMMA FieldInit)* COMMA? RBRACE
+           | LBRACE Expr (COMMA Expr)* COMMA? RBRACE
+           | LBRACE RBRACE
+
+TypeExpr ::= PrefixTypeOp* ErrorUnionExpr
+
+ErrorUnionExpr ::= SuffixExpr (EXCLAMATIONMARK TypeExpr)?
+
+SuffixExpr ::= KEYWORD_ASYNC PrimaryTypeExpr SuffixOp* FnCallArguments
+             | PrimaryTypeExpr (SuffixOp | FnCallArguments)*
+
+Builtin ::= AT IDENTIFIERLITERAL
+
+PrimaryTypeExpr ::= Builtin FnCallArguments
+                  | CHARLITERAL
+                  | ContainerDecl
+                  | DOT Identifier
+                  | DOT InitList
+                  | ErrorSetDecl
+                  | FLOATLITERAL
+                  | FnProto
+                  | GroupedExpr
+                  | LabeledTypeExpr
+                  | Identifier
+                  | IfTypeExpr
+                  | INTEGERLITERAL
+                  | KEYWORD_COMPTIME TypeExpr
+                  | KEYWORD_ERROR DOT Identifier
+                  | KEYWORD_FALSE
+                  | KEYWORD_NULL
+                  | KEYWORD_ANYFRAME
+                  | KEYWORD_TRUE
+                  | KEYWORD_UNDEFINED
+                  | KEYWORD_UNREACHABLE
+                  | StringLiteral
+                  | SwitchExpr
+
+ContainerDecl ::= (KEYWORD_EXTERN | KEYWORD_PACKED)? ContainerDeclAuto
+
+ErrorSetDecl ::= KEYWORD_ERROR LBRACE IdentifierList RBRACE
+
+GroupedExpr ::= LPAREN Expr RPAREN
+
+IfTypeExpr ::= IfPrefix TypeExpr (KEYWORD_ELSE Payload? TypeExpr)?
+
+LabeledTypeExpr ::= BlockLabel Block
+                  | BlockLabel? LoopTypeExpr
+
+LoopTypeExpr ::= KEYWORD_INLINE? (ForTypeExpr | WhileTypeExpr)
+
+ForTypeExpr ::= ForPrefix TypeExpr (KEYWORD_ELSE TypeExpr)?
+
+WhileTypeExpr ::= WhilePrefix TypeExpr (KEYWORD_ELSE Payload? TypeExpr)?
+
+SwitchExpr ::= KEYWORD_SWITCH LPAREN Expr RPAREN LBRACE SwitchProngList RBRACE
+
+AsmExpr ::= KEYWORD_ASM KEYWORD_VOLATILE? LPAREN StringLiteral AsmOutput? RPAREN
+
+AsmOutput ::= COLON AsmOutputList AsmInput?
+
+AsmOutputItem ::= LBRACKET Identifier RBRACKET StringLiteral LPAREN (MINUSRARROW TypeExpr | Identifier) RPAREN
+
+AsmInput ::= COLON AsmInputList AsmClobbers?
+
+AsmInputItem ::= LBRACKET Identifier RBRACKET StringLiteral LPAREN Expr RPAREN
+
+AsmClobbers ::= COLON StringList
+
+BreakLabel ::= COLON Identifier
+
+BlockLabel ::= Identifier COLON
+
+FieldInit ::= DOT Identifier EQUAL Expr
+
+WhileContinueExpr ::= COLON LPAREN AssignExpr RPAREN
+
+LinkSection ::= KEYWORD_LINKSECTION LPAREN Expr RPAREN
+
+CallConv ::= KEYWORD_CALLCONV LPAREN Expr RPAREN
+
+ParamDecl ::= (KEYWORD_NOALIAS | KEYWORD_COMPTIME)? (Identifier COLON)? ParamType
+
+ParamType ::= KEYWORD_ANYTYPE
+            | DOT3
+            | TypeExpr
+
+IfPrefix ::= KEYWORD_IF LPAREN Expr RPAREN PtrPayload?
+
+WhilePrefix ::= KEYWORD_WHILE LPAREN Expr RPAREN PtrPayload? WhileContinueExpr?
+
+ForPrefix ::= KEYWORD_FOR LPAREN Expr RPAREN PtrIndexPayload
+
+Payload ::= PIPE Identifier PIPE
+
+PtrPayload ::= PIPE ASTERISK? Identifier PIPE
+
+PtrIndexPayload ::= PIPE ASTERISK? Identifier (COMMA Identifier)? PIPE
+
+SwitchProng ::= SwitchCase EQUALRARROW PtrPayload? AssignExpr
+
+SwitchCase ::= SwitchItem (COMMA SwitchItem)* COMMA?
+             | KEYWORD_ELSE
+
+SwitchItem ::= Expr (DOT3 Expr)?
+
+AssignOp ::= ASTERISKEQUAL
+           | SLASHEQUAL
+           | PERCENTEQUAL
+           | PLUSEQUAL
+           | MINUSEQUAL
+           | LARROW2EQUAL
+           | RARROW2EQUAL
+           | AMPERSANDEQUAL
+           | CARETEQUAL
+           | PIPEEQUAL
+           | ASTERISKPERCENTEQUAL
+           | PLUSPERCENTEQUAL
+           | MINUSPERCENTEQUAL
+           | EQUAL
+
+CompareOp ::= EQUALEQUAL
+            | EXCLAMATIONMARKEQUAL
+            | LARROW
+            | RARROW
+            | LARROWEQUAL
+            | RARROWEQUAL
+
+BitwiseOp ::= AMPERSAND
+            | CARET
+            | PIPE
+            | KEYWORD_ORELSE
+            | KEYWORD_CATCH Payload?
+
+BitShiftOp ::= LARROW2 | RARROW2
+
+AdditionOp ::= PLUS
+             | MINUS
+             | PLUS2
+             | PLUSPERCENT
+             | MINUSPERCENT
+
+MultiplyOp ::= PIPE2
+             | ASTERISK
+             | SLASH
+             | PERCENT
+             | ASTERISK2
+             | ASTERISKPERCENT
+
+PrefixOp ::= EXCLAMATIONMARK
+           | MINUS
+           | TILDE
+           | MINUSPERCENT
+           | AMPERSAND
+           | KEYWORD_TRY
+           | KEYWORD_AWAIT
+
+PrefixTypeOp ::= QUESTIONMARK
+               | KEYWORD_ANYFRAME MINUSRARROW
+               | ArrayTypeStart (ByteAlign | KEYWORD_CONST | KEYWORD_VOLATILE | KEYWORD_ALLOWZERO)*
+               | PtrTypeStart (KEYWORD_ALIGN LPAREN Expr (COLON INTEGERLITERAL COLON INTEGER)? RPAREN | KEYWORD_CONST | KEYWORD_VOLATILE | KEYWORD_ALLOWZERO)*
+
+SuffixOp ::= LBRACKET Expr (DOT2 Expr?)? RBRACKET
+           | DOT Identifier
+           | DOTASTERISK
+           | DOTQUESTIONMARK
+
+FnCallArguments ::= LPAREN ExprList RPAREN
+
+ArrayTypeStart ::= LBRACKET Expr? (COLON Expr)? RBRACKET
+
+PtrTypeStart ::= ASTERISK
+               | ASTERISK2
+               | LBRACKET ASTERISK (LETTERC | COLON Expr)? RBRACKET
+
+ContainerDeclAuto ::= ContainerDeclType LBRACE ContainerMembers RBRACE
+
+ContainerDeclType ::= KEYWORD_STRUCT
+                    | KEYWORD_OPAQUE
+                    | KEYWORD_ENUM (LPAREN Expr RPAREN)?
+                    | KEYWORD_UNION (LPAREN (KEYWORD_ENUM (LPAREN Expr RPAREN)? | Expr) RPAREN)?
+
+ByteAlign ::= KEYWORD_ALIGN LPAREN Expr RPAREN
+
+IdentifierList ::= (Identifier COMMA)* Identifier?
+
+SwitchProngList ::= (SwitchProng COMMA)* SwitchProng?
+
+AsmOutputList ::= (AsmOutputItem COMMA)* AsmOutputItem?
+
+AsmInputList ::= (AsmInputItem COMMA)* AsmInputItem?
+
+StringList ::= (StringLiteral COMMA)* StringLiteral?
+
+ParamDeclList ::= (ParamDecl COMMA)* ParamDecl?
+
+ExprList ::= (Expr COMMA)* Expr?
